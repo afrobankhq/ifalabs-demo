@@ -1,0 +1,111 @@
+.stats-section {
+  background: #050505;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  z-index: 999999;
+  padding: 150px 50px;
+
+  @media (max-width: 1024px) {
+    padding: 150px 1.5rem;
+  }
+
+  @media (max-width: 600px) {
+    padding: 100px 1rem;
+  }
+
+  .cards {
+    width: 100%;
+    max-width: 1500px;
+    display: flex;
+    flex-direction: row;
+    gap: 1.5rem;
+
+    @media (max-width: 1124px) {
+      gap: 1rem;
+    }
+    @media (max-width: 1024px) {
+      display: grid;
+      gap: 2rem;
+      grid-template-columns: auto auto;
+    }
+    @media (max-width: 600px) {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: auto;
+    }
+    .card {
+      flex-basis: 25%;
+      background-color: #111111;
+      border-radius: 1rem;
+      padding: 2rem;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+
+      @media (max-width: 1124px) {
+        padding: 1.5rem;
+      }
+      @media (max-width: 1024px) {
+        padding: 2rem;
+      }
+      @media (max-width: 600px) {
+        padding: 1.8rem;
+      }
+
+      .card-description {
+        font-size: 15px;
+        line-height: 22px;
+        font-family: var(--font-inter);
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 400;
+        max-width: 220px;
+
+        @media (max-width: 1024px) {
+          max-width: 100%;
+        }
+      }
+
+      .stat {
+        margin-top: auto;
+      }
+
+      .card-number {
+        font-family: 'BIZ UDMincho';
+        color: #ffffff;
+        font-size: 64px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        margin-top: 100px;
+        position: relative;
+        width: max-content;
+        padding-right: 2rem;
+        transition: all 0.4s linear;
+
+        @media (max-width: 1124px) {
+          font-size: 48px;
+          margin-top: 80px;
+        }
+        @media (max-width: 600px) {
+          margin-top: 40px;
+        }
+      }
+
+      .card-label {
+        font-family: var(--font-inter);
+        font-size: 13px;
+        color: #ffffff;
+        font-weight: 400;
+      }
+      .plus-icon {
+        font-size: 24px;
+
+        position: absolute;
+        top: 0.5rem;
+        right: 0;
+      }
+    }
+  }
+}

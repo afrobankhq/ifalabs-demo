@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=BIZ+UDMincho&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Red+Hat+Mono:ital,wght@0,300..700;1,300..700&family=Red+Hat+Text:ital,wght@0,300..700;1,300..700&display=swap');
+
+@import 'tailwindcss';
+@import './_variable';
+
+:root {
+  --font-inter: 'Inter', sans-serif;
+  --font-red-hat-mono: 'Red Hat Mono', monospace;
+  --font-red-hat-text: 'Red Hat Text', sans-serif;
+}
+
+@font-face {
+  font-family: 'BIZ UDMincho';
+  src: url('../../public/fonts/Kalice/Kalice-Trial-Regular.ttf') ;
+}
+
+
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+html {
+  scroll-behavior: smooth;
+  box-sizing: border-box;
+}
+
+@media (prefers-reduced-motion) {
+  html {
+    scroll-behavior: none;
+  }
+}
+
+// html *,
+// html *::after,
+// html *::before {
+//   box-sizing: inherit;
+// }
+body {
+  background: #000000;
+  font-family: var(--font-inter);
+}
+
+input {
+  font-family: var(--font-inter);
+  outline: none;
+  border: none;
+}
+button {
+  overflow: hidden;
+  cursor: pointer;
+
+  &:hover {
+    transform: scale(0.98);
+    transition: transform 0.3s ease-in-out;
+  }
+}
+
+.font-red-hat-mono {
+  font-family: var(--font-red-hat-mono);
+}
+
+.font-red-hat-text {
+  font-family: var(--font-red-hat-text);
+}
+
+.font-inter {
+  font-family: var(--font-inter);
+}
+
+[data-testid*="reown-branding"],
+[class*="reown-branding"],
+[class*="walletconnect-branding"],
+.w3m-footer,
+.w3m-brand {
+  display: none !important;
+}
+
+/* Alternative selectors that might work */
+div[class*="powered-by"],
+div[class*="branding"],
+footer[class*="reown"] {
+  display: none !important;
+}

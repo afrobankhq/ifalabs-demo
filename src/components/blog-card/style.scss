@@ -1,0 +1,94 @@
+.blog-card {
+  // flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding-top: 70px;
+  overflow: hidden !important;
+
+  @media (max-width: 600px) {
+    max-width: 100%;
+  }
+
+  .image-placeholder {
+    height: 170px;
+    width: 100%;
+    max-width: calc(100% - 4rem);
+    background: #ccc;
+    border-radius: 1rem;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 0;
+    z-index: 111;
+
+    @media (max-width: 600px) {
+      width: 100%;
+      max-width: calc(100% - 2rem);
+      height: 150px;
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 1rem;
+    }
+  }
+
+  main {
+    padding: 2rem;
+    padding-top: 100px;
+    background: #fff;
+    border-radius: 1rem;
+
+    @media (max-width: 600px) {
+      padding: 1rem;
+      padding-top: 60px;
+    }
+  }
+
+  .card-body {
+    margin-top: 40px;
+
+    h3 {
+      font-family: 'BIZ UDMincho';
+      font-style: normal;
+      font-weight: 400;
+      font-size: 24px;
+      line-height: 120%;
+      color: #121212;
+
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      @media (max-width: 1024px) {
+        font-size: 20px;
+      }
+      @media (max-width: 600px) {
+        font-size: 18px;
+        line-height: 130%;
+      }
+    }
+
+    .date {
+      padding-top: 20px;
+      margin-top: 1.5rem;
+      font-style: normal;
+      font-weight: 500;
+      font-size: 12px;
+      letter-spacing: -0.36px;
+      color: hsla(0, 0%, 7%, 0.6);
+      text-align: left;
+      border-top: 1px solid #e7e5e0;
+
+      @media (max-width: 600px) {
+        padding-top: 16px;
+      }
+    }
+  }
+}
