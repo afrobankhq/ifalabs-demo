@@ -5,9 +5,9 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-
-  const path = req.url?.replace(/^\/api/, '') || '';
-
+  // next-http-proxy-middleware automatically forwards all headers from the client request
+  // including custom headers like X-API-Key
+  // The proxy will automatically forward headers, so we don't need to manually handle them
   return httpProxyMiddleware(req, res, {
     target: 'http://146.190.186.116:8000',
     changeOrigin: true,
@@ -15,20 +15,7 @@ export default async function handler(
       '^/api': '/api',
     },
     secure: false,
-    // Forward all headers from the client request
-    onProxyReq: (proxyReq, req) => {
-      // Copy all headers from the original request
-      if (req.headers) {
-        Object.keys(req.headers).forEach((key) => {
-          const value = req.headers[key];
-          if (value && typeof value === 'string') {
-            proxyReq.setHeader(key, value);
-          } else if (Array.isArray(value)) {
-            proxyReq.setHeader(key, value[0]);
-          }
-        });
-      }
-    },
+    // Headers are automatically forwarded by next-http-proxy-middleware
   });
 }
 
