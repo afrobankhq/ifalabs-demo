@@ -5,10 +5,10 @@ import { NextRequest, NextResponse } from 'next/server'
 const candidateUpstream =
   process.env.PROXY_UPSTREAM_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  'http://146.190.186.116:8000'
+  'https://api.ifalabs.com'
 
 const isRelative = candidateUpstream.startsWith('/')
-const upstreamSafe = isRelative || !candidateUpstream ? 'http://146.190.186.116:8000' : candidateUpstream
+const upstreamSafe = isRelative || !candidateUpstream ? 'https://api.ifalabs.com' : candidateUpstream
 const UPSTREAM_BASE = upstreamSafe.replace(/\/$/, '')
 
 // Log the configuration on startup (only in non-production)
