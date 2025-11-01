@@ -1,134 +1,128 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-/**
- * Determine the upstream API base URL.
- * Priority: PROXY_UPSTREAM_URL > NEXT_PUBLIC_API_URL > fallback
- */
+// ------------------------------
+// Configuration
+// ------------------------------
+const DEFAULT_UPSTREAM = 'https://api.ifalabs.com'
+const CACHE_TTL = 15 * 1000 // 15 seconds cache per URL
+const cache = new Map<string, { data: ArrayBuffer; ts: number; status: number; headers: Record<string, string> }>()
+
+// Resolve base URL from environment
 const candidateUpstream =
   process.env.PROXY_UPSTREAM_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  'https://api.ifalabs.com'
+  DEFAULT_UPSTREAM
 
-// Ensure a clean, absolute base (prevent recursion)
-const isRelative = candidateUpstream.startsWith('/')
-const UPSTREAM_BASE = (isRelative || !candidateUpstream
-  ? 'https://api.ifalabs.com'
-  : candidateUpstream
-).replace(/\/$/, '')
+const UPSTREAM_BASE = candidateUpstream.startsWith('/')
+  ? DEFAULT_UPSTREAM
+  : candidateUpstream.replace(/\/$/, '')
 
-// Optional prefix override (default "api")
-const API_PREFIX = process.env.PROXY_API_PREFIX || 'api'
-
-// Log proxy config (only during development)
 if (process.env.NODE_ENV !== 'production') {
-  console.log('[proxy] Configuration:', {
-    UPSTREAM_BASE,
-    PROXY_UPSTREAM_URL: process.env.PROXY_UPSTREAM_URL,
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-    API_PREFIX,
-  })
+  console.log('[proxy] Using upstream base:', UPSTREAM_BASE)
 }
 
-/**
- * Universal proxy handler for all HTTP methods
- */
-async function handle(
-  request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
-) {
+// ------------------------------
+// Handler
+// ------------------------------
+async function handle(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const params = await context.params
   const targetPath = params?.path?.join('/') || ''
-  const upstreamPath = targetPath ? `${API_PREFIX}/${targetPath}` : API_PREFIX
+  const upstreamPath = `api/${targetPath}`
   const url = `${UPSTREAM_BASE}/${upstreamPath}${request.nextUrl.search}`
 
-  if (process.env.NODE_ENV !== 'production') {
-    console.debug('[proxy →]', {
-      incomingPath: request.url,
-      upstreamUrl: url,
-      method: request.method,
-      hasApiKey: request.headers.get('X-API-Key') ? 'Yes' : 'No',
+  const cacheKey = `${request.method}:${url}`
+  const now = Date.now()
+
+  // ------------------------------
+  // Serve from cache if valid
+  // ------------------------------
+  const cached = cache.get(cacheKey)
+  if (cached && now - cached.ts < CACHE_TTL) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('[proxy] cache hit →', cacheKey)
+    }
+    return new NextResponse(cached.data, {
+      status: cached.status,
+      headers: {
+        ...cached.headers,
+        'x-cache': 'HIT',
+      },
     })
   }
 
-  // Forward headers (omit hop-by-hop ones)
+  if (process.env.NODE_ENV !== 'production') {
+    console.debug('[proxy] fetch →', { url, method: request.method })
+  }
+
+  // Clone request headers except hop-by-hop
   const headers = new Headers()
   request.headers.forEach((value, key) => {
-    const lower = key.toLowerCase()
-    if (['host', 'origin', 'connection', 'transfer-encoding'].includes(lower))
-      return
+    if (['host', 'origin', 'connection', 'transfer-encoding'].includes(key.toLowerCase())) return
     headers.set(key, value)
   })
 
-  // Prepare fetch options
   const init: RequestInit = {
     method: request.method,
     headers,
-    body: ['GET', 'HEAD'].includes(request.method)
-      ? undefined
-      : await request.text(),
+    body: ['GET', 'HEAD'].includes(request.method) ? undefined : await request.text(),
     redirect: 'follow',
   }
 
-  // Timeout protection (15 seconds)
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 15_000)
-  init.signal = controller.signal
-
   try {
     const upstreamResponse = await fetch(url, init)
-    clearTimeout(timeout)
+    const data = await upstreamResponse.arrayBuffer()
 
-    // Stream response to avoid buffering large payloads
-    const response = new NextResponse(upstreamResponse.body, {
-      status: upstreamResponse.status,
-      statusText: upstreamResponse.statusText,
-      headers: upstreamResponse.headers,
+    const responseHeaders: Record<string, string> = {}
+    upstreamResponse.headers.forEach((v, k) => {
+      if (['transfer-encoding', 'connection'].includes(k.toLowerCase())) return
+      responseHeaders[k] = v
     })
 
-    if (process.env.NODE_ENV !== 'production') {
-      console.debug('[proxy ←]', {
-        url,
+    // Cache successful (2xx) responses for GET only
+    if (request.method === 'GET' && upstreamResponse.ok) {
+      cache.set(cacheKey, {
+        data,
+        ts: now,
         status: upstreamResponse.status,
-        contentType: upstreamResponse.headers.get('content-type'),
+        headers: responseHeaders,
       })
     }
 
-    return response
+    return new NextResponse(data, {
+      status: upstreamResponse.status,
+      headers: {
+        ...responseHeaders,
+        'x-cache': 'MISS',
+      },
+    })
   } catch (error) {
-    clearTimeout(timeout)
     const message = (error as Error)?.message || 'Unknown error'
-
-    console.error('[proxy] error', {
+    const details = {
       url,
       method: request.method,
       error: message,
       upstreamBase: UPSTREAM_BASE,
-      targetPath,
-      timestamp: new Date().toISOString(),
-    })
+      ts: new Date().toISOString(),
+    }
 
-    const responseBody =
+    console.error('[proxy] error', details)
+
+    const body =
       process.env.NODE_ENV !== 'production'
         ? {
             message: 'Proxy request failed',
-            error: message,
-            details: {
-              url,
-              method: request.method,
-              upstreamBase: UPSTREAM_BASE,
-              targetPath,
-            },
-            hint: 'Check PROXY_UPSTREAM_URL and backend availability',
+            details,
+            hint: 'Check that PROXY_UPSTREAM_URL is reachable or increase cache TTL',
           }
-        : {
-            message: 'Service temporarily unavailable',
-            error: 'Unable to connect to backend service',
-          }
+        : { message: 'Service temporarily unavailable' }
 
-    return NextResponse.json(responseBody, { status: 502 })
+    return NextResponse.json(body, { status: 502 })
   }
 }
 
+// ------------------------------
+// Export all methods
+// ------------------------------
 export {
   handle as GET,
   handle as POST,
