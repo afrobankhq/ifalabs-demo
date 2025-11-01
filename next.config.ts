@@ -1,6 +1,5 @@
 import type { NextConfig } from 'next';
 
-/** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
   webpack: (config) => {
     config.externals.push('pino-pretty', 'lokijs', 'encoding');
@@ -10,11 +9,15 @@ const nextConfig: NextConfig = {
     });
     return config;
   },
+
   async rewrites() {
     return [
       {
+        // Proxy all API requests to your external backend
         source: '/api/:path*',
-        destination: 'http://146.190.186.116:8000/api/:path*',
+        destination: process.env.NEXT_PUBLIC_API_BASE_URL
+          ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/:path*`
+          : 'https://api.ifalabs.com/api/:path*',
       },
     ];
   },
