@@ -62,12 +62,16 @@ class ApiService {
         
         if (isOraclePriceEndpoint && typeof window !== 'undefined') {
           const apiKey = this.getApiKey();
-          if (apiKey) {
-            // Ensure headers object exists
-            if (!config.headers) {
-              config.headers = {};
+          if (apiKey && config.headers) {
+            // Set the X-API-Key header using common property access
+            // This works with both plain objects and AxiosHeaders instances
+            if ('set' in config.headers && typeof config.headers.set === 'function') {
+              // AxiosHeaders instance
+              config.headers.set('X-API-Key', apiKey);
+            } else {
+              // Plain object
+              (config.headers as Record<string, string>)['X-API-Key'] = apiKey;
             }
-            config.headers['X-API-Key'] = apiKey;
           }
         }
         return config;
