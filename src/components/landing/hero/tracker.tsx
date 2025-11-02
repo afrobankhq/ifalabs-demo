@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { SearchIcon, LockIcon } from '../../svg';
 import apiService, { TokenPrice } from '@/lib/api';
 import { StaticImageData } from 'next/image';
@@ -46,12 +46,8 @@ const CryptoTracker: React.FC = () => {
     },
   ]);
   const [loading, setLoading] = useState(true);
-  const retryCount = useRef(0);
-  const maxRetries = 3;
 
   useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null;
-
     const fetchPrices = async () => {
       try {
         const prices = await apiService.getAllTokenPrices();
@@ -64,30 +60,15 @@ const CryptoTracker: React.FC = () => {
         })) as CryptoData[];
 
         setCryptoData(updatedData);
-        retryCount.current = 0; // Reset on success
-        setLoading(false);
       } catch (error) {
         console.error('Error fetching crypto prices:', error);
-        
-        retryCount.current += 1;
-        
-        if (retryCount.current >= maxRetries) {
-          console.error('Max retries reached for crypto prices');
-          setLoading(false);
-          if (intervalId) {
-            clearInterval(intervalId);
-          }
-        }
+      } finally {
+        setLoading(false);
       }
     };
 
+    // Fetch prices only once on component mount
     fetchPrices();
-    intervalId = setInterval(fetchPrices, 60000); // Increase to 60 seconds
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
   }, []);
 
   const formatPercentage = (pct: number): string => {
